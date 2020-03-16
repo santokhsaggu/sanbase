@@ -13,3 +13,8 @@ Sanbase is a light weight json document database written in PHP.It is an embedde
 3.Changelog files for managing database between various versions of software application.
 
 4.Software Automation. 
+
+
+# About Author
+
+Sanbase is written by Santokh Singh Saggu,founder of Riasys Technology
