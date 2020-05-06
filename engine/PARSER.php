@@ -49,35 +49,16 @@ public function PARSER()
 		$this->delim=array();
 		$this->keydelim=array();
 		$this->tree=array();
-		$this->match_patterns['array']="/\s*{\s*\[\]\s*(=|>=|<=)\s*\d*\s*}/";
-		$this->match_patterns['key']="/\s*{\s*\w+\s*}\s*/";
-		$this->match_patterns['sd']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*\d*\s*}/";
-		$this->match_patterns['sw']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')s*}/";
-		$this->match_patterns['ad']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*\d*\s*and?\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*\d*\s*}/";
-		$this->match_patterns['od']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*\d*\s*or?\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*\d*\s*}/";
-		$this->match_patterns['aw']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')\s*and?\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')\s*}/";
-		$this->match_patterns['ow']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')\s*or?\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')\s*}/";
-		$this->match_patterns['ak']="/\s*{\s*\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=|>=|<=)\s*(\')\w*(\')\s*and?\s*\w+\s*}/";
+		$left_key="\s*(_*[a-zA-Z0-9]+\.?)+\s*";
+		$right_number="\s*[0-9]+\.?[0-9]*\s*";
+		$right_word="\s*\'(_*[a-zA-Z0-9]\.*_*)+\'\s*";
+		$op="(=|>=|<=)";
+		$this->match_patterns['a']="/\s*{\s*\[\]\s*(=|>=|<=)\s*\d*\s*}/";
+		$this->match_patterns['k']="/\s*{".$left_key."}\s*/";
+		$this->match_patterns['q']="/\s*{".$left_key.$op."(".$right_number."|".$right_word.")(\s*(and|AND|or|OR)?\s*".$left_key.$op."(".$right_number."|".$right_word.")\s*)*}/";
 		
-		$this->exp_patterns['=']['a']="/\[\]\s*(=)\s*\d*/";
-		$this->exp_patterns['>=']['a']="/\[\]\s*(>=)\s*\d*/";
-		$this->exp_patterns['<=']['a']="/\[\]\s*(<=)\s*\d*/";
-		$this->exp_patterns['=']['w']="/\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=)\s*(\')\w*(\')/";
-		$this->exp_patterns['>=']['w']="/\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(>=)\s*(\')\w*(\')/";
-		$this->exp_patterns['<=']['w']="/\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(<=)\s*(\')\w*(\')/";	
-		$this->exp_patterns['=']['d']="/\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(=)\s*\d*/";
-		$this->exp_patterns['>=']['d']="/\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(>=)\s*\d*/";
-		$this->exp_patterns['<=']['d']="/\w*\.?\w*\.?\w*\.?\w*\.?\w*\.?\w+\s*(<=)\s*\d*/";
-		
-		$this->exp_patterns['key']['key']="/\s*\w+\s*/";
-		$this->keydelim['ad']="and";
-		$this->keydelim['od']="or";
-		$this->keydelim['aw']="and";
-		$this->keydelim['ow']="or";
-		$this->keydelim['ak']="and";
-		$delim[0]=">=";
-		$delim[1]="<=";
-		$delim[3]="=";
+
+
 }
 
 
@@ -88,7 +69,7 @@ public function MatchPattern($query)
 			if(preg_match($this->match_patterns[$key],$query))
 			{
 
-				return $key;
+				return true;
 
 			}
 	}
@@ -97,74 +78,111 @@ return false;
 }
 
 
-public function Tokenize($query,$key)
+function Tokenize($query,$key)
 {
-$opkey='nop';
+$opkey=array();
 $i=0;
-	if(array_key_exists($key,$this->keydelim))
-	{
-		$tok=explode($this->keydelim[$key],$query);
-		$opkey=$this->keydelim[$key];
-	}
-	else
-	{
-		$tok[0]=$query;
+$j=0;
+$space_token='';
+$this->tree=array();
+if($key==1)
+{
+	$space_token=preg_split( "/\s+/", $query );
 
+	foreach($space_token as $key => $value)
+	{
+		if($value=='and' || $value=='AND' || $value=='or' || $value=='OR')
+		{
+			$opkey[$j]=$value;
+			$j++;
+		}
+		else
+		{
+			$tok[$i]=trim($value,"{");
+			$tok[$i]=trim($tok[$i],"}");
+			$tok[$i]=trim($tok[$i]);
+			$i++;
+		}
 	}
+
+
+	//var_dump($opkey);
+	//var_dump($tok);
 	
 	foreach($tok as $key => $value)
 	{
-		$tok[$key]=trim($value,"{");
-		$tok[$key]=trim($tok[$key],"}");
-		$tok[$key]=trim($tok[$key]);
-		$ptok[$opkey][$key]=$tok[$key];
-	}
-	foreach($ptok as $key => $value)
-	{
-		foreach($value as $ekey => $evalue)
+		
+		$data=$this->GetExpTokens($value);
+		$this->tree[$key]['expr']=$data;
+ 
+		
+		if($key<count($opkey))
 		{
-			$data=$this->GetExpTokens($evalue);
-			$this->tree[$i]=$data;
-			$i=$i+1; 
+			$this->tree[$key]['lop']=$opkey[$key];
+			$this->tree[$key]['next']=$key+1;
 		}
-		$this->tree[$i]=$key;
+		else
+		{
+			$this->tree[$key]['lop']="end";
+			$this->tree[$key]['next']=0;
+		}
 	}
+}
 	
 	return $this->tree;
 
 }
 
-private function GetExpTokens($exp)
+
+
+function GetExpTokens($exp)
 {
 $data=array();
-	foreach($this->exp_patterns as $ekey => $evalue)
-	{
+$tok=array();	
 			
-		foreach($evalue as $key => $value)
+		$tok=preg_split( "/>=|=|<=/", $exp );
+		
+	
+		if(count($tok)==2)
 		{
-			if(preg_match($this->exp_patterns[$ekey][$key],$exp))
+			
+			$data['left']=trim($tok[0]);
+			$data['right']=trim($tok[1]);
+			$data['mop']=$this->GetMathOp($exp);
+			if($data['left']=="[]")
 			{
-				$data=explode($ekey,$exp);
-				
-				if($ekey=="key")
-				{
-					$data[0]=trim($data[0]);
-					$data[1]=trim($data[0]);
-				}
-				else
-				{
-					$data[0]=trim($data[0]);
-					$data[1]=trim($data[1]);
-				}
-				$data[2]=$ekey;
-				$data[3]=$key;
-				return $data;
-
+				$data['type']="a";
+			}
+			else
+			{
+				$data['type']="e";
 			}
 		}
-	}
+		else
+		{
+			$data['left']=trim($tok[0]);
+			$data['right']='';
+			$data['mop']='';
+			$data['type']="k";
+		}
+		
+	
 return  $data;
 
+}
+
+function GetMathOp($exp){
+
+if(strpos($exp, ">=") !== false){
+	return ">=";
+}
+elseif(strpos($exp, "<=") !== false){
+	return "<=";
+}
+else
+{
+	return "=";
+}
 }
 
 
