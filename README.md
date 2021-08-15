@@ -6,13 +6,15 @@ Sanbase is a light weight json document database written in PHP.It is an embedde
 
 # Applications of Sanbase
 
-1.Configuration Files.
+1.Store & Manage Server Driven UI.
 
-2.Customization Files.
+2.Configuration Files.
 
-3.Changelog files for managing database between various versions of software application.
+3.Customization Files.
 
-4.Software Automation. 
+4.Changelog files for managing database between various versions of software application.
+
+5.Software Automation. 
 
 
 # About Author
